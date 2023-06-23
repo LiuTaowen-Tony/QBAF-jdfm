@@ -1,263 +1,12 @@
 import torch
 import torch.nn as nn
-import sparselinear as sl
 from typing import List
-from sparselinear import SparseLinear
-from abc import abstractmethod
-import math
 from genetic_algorithm.SparseAlgo import *
 
-# def connectivity_list_random(in_size: int, out_size: int, num_connections: int):
-#     col = torch.randint(low=0, high=in_size, size=(num_connections,)).view(1, -1).long()
-#     row = torch.randint(low=0, high=out_size, size=(num_connections,)).view(1, -1).long()
-#     connections = torch.cat((row, col), dim=0)
-#     return connections
-
-# def mask_matrix_2_connectivity_list(adjacency_matrix: torch.Tensor):
-#     adjacency_matrix = adjacency_matrix.round()
-#     adjacency_matrix = adjacency_matrix.type(torch.long)
-#     assert adjacency_matrix.unique().tolist() in [[0], [1], [0, 1]]
-#     adjacency_list = [[], []]
-#     for i in range(adjacency_matrix.shape[0]):
-#         row_non_zero = torch.nonzero(adjacency_matrix[i]).squeeze(1).tolist()
-#         for j in row_non_zero:
-#             adjacency_list[1].append(i)
-#             adjacency_list[0].append(j)
-#     return torch.tensor(adjacency_list)
-
-# def adjacency_list_2_mask_matrix(adjacency_list: torch.Tensor, in_size: int, out_size: int):
-#     # convert type to int
-#     adjacency_list = adjacency_list.type(torch.int)
-#     adjacency_matrix = torch.zeros(in_size, out_size, dtype=torch.int)
-#     for row, col in (adjacency_list.T):
-#         assert 0 <= col < in_size
-#         assert 0 <= row < out_size
-#         adjacency_matrix[col, row] = 1
-#     return adjacency_matrix
-
-
-# class SparseABC(nn.Module):
-#     def __init__(self) -> None:
-#         super().__init__()
-
-#     @abstractmethod
-#     def get_connectivities(self):
-#         pass
-
-#     @abstractmethod
-#     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
-#         pass
-
-#     @abstractmethod
-#     def from_mask_matrix_encoding_to_connectivity(self):
-#         pass
-
-#     def find_sparsity(self) -> float:
-#         return 1 - self.total_num_conn() / self.total_max_num_conn()
-
-#     @abstractmethod
-#     def from_mask_matrix_encoding(self):
-#         pass
-
-#     @abstractmethod
-#     def total_max_num_conn(self):
-#         pass
-
-#     @abstractmethod
-#     def total_num_conn(self):
-#         pass
-
-    
-
-# class SparseLinearEnhanced(SparseLinear, SparseABC):
-#     def __init__(
-#             self,
-#             in_features: int, 
-#             out_features: int, 
-#             connectivity: torch.Tensor
-#         ):
-#         """
-#         :param connectivity: connectivity matrix of shape (in_features, out_features) 
-#         """
-#         try:
-#             super().__init__(
-#                 in_features=in_features, 
-#                 out_features=out_features, 
-#                 connectivity=connectivity.to(torch.long))
-#         except:
-#             connectivity = torch.tensor([[0],[0]], dtype=torch.long)
-#             super().__init__(
-#                 in_features=in_features,
-#                 out_features=out_features,
-#                 connectivity=connectivity.to(torch.long))
-#         self.mask_matrix = adjacency_list_2_mask_matrix(connectivity, in_features, out_features)
-
-#     def total_max_num_conn(self):
-#         return self.in_features * self.out_features
-    
-#     def total_num_conn(self):
-#         return self.connectivity.shape[1]
-
-#     def get_connectivities(self):
-#         return self.connectivity
-
-#     def get_mask_matrix_encoding(self):
-#         return adjacency_list_2_mask_matrix(
-#             self.connectivity,
-#             self.in_features,
-#             self.out_features)
-    
-#     @classmethod
-#     def from_mask_matrix_encoding_to_connectivity(
-#             cls, 
-#             *, 
-#             input_size:int,
-#             output_size:int,
-#             mask_matrix_encoding:torch.Tensor)->torch.Tensor:
-#         return mask_matrix_2_connectivity_list(
-#             mask_matrix_encoding.reshape(input_size, output_size)
-#         )
-
-#     @classmethod
-#     def from_mask_matrix_encoding(
-#         cls,
-#         *,
-#         input_size:int,
-#         output_size:int,
-#         mask_matrix_encoding:torch.Tensor
-#     ) -> "SparseLinearEnhanced":
-#        return SparseLinearEnhanced(
-#            in_features=input_size,
-#            out_features=output_size,
-#            connectivity=mask_matrix_encoding
-#        ) 
-
-# def test_sparse_linear_enhanced():
-#     in_size = 10
-#     out_size = 20
-#     num_connections = 30
-#     connectivity = connectivity_list_random(in_size, out_size, num_connections)
-#     sparse_linear = SparseLinearEnhanced(
-#         in_features=in_size, 
-#         out_features=out_size, 
-#         connectivity=connectivity)
-#     assert sparse_linear.find_sparsity() == (1 - num_connections / (in_size * out_size))
-#     assert sparse_linear.mask_matrix.shape == (in_size, out_size)
-#     assert (sparse_linear.mask_matrix == adjacency_list_2_mask_matrix(connectivity, in_size, out_size)).all()
-#     assert (sparse_linear.mask_matrix == sparse_linear.get_mask_matrix_encoding()).all()
-#     assert (sparse_linear.connectivity == sparse_linear.get_connectivites()).all()
-#     assert (sparse_linear.connectivity == mask_matrix_2_connectivity_list(sparse_linear.mask_matrix)).all()
-#     assert (sparse_linear.connectivity == sparse_linear.from_mask_matrix_encoding_to_connectivity(
-#         input_size=in_size, output_size=out_size, mask_matrix_encoding=sparse_linear.get_mask_matrix_encoding())).all()
-#     assert (sparse_linear.from_mask_matrix_encoding(
-#         input_size=in_size, output_size=out_size, mask_matrix_encoding=sparse_linear.get_mask_matrix_encoding()).connectivity == sparse_linear.connectivity).all()
-
-# class SparseProd(SparseABC):
-#     def __init__(self, *, 
-#         connectivity: torch.Tensor, 
-#         input_size: int, 
-#         joint_feature_size: int):
-#         super().__init__()
-#         """
-#         :param connectivity: connectivity matrix of shape (input_size, joint_feature_size) 
-#         """
-#         self.input_size = input_size
-#         self.joint_feature_size = joint_feature_size
-#         self.connectivity = connectivity
-#         self.mask_matrix = adjacency_list_2_mask_matrix(connectivity, input_size, joint_feature_size)
-#         self.mask_matrix.requires_grad_(False)
-
-#     @classmethod
-#     def from_mask_matrix_encoding(cls,  input_size: int, joint_feature_size: int, mask_matrix_encoding: torch.Tensor):
-#         connectivity = mask_matrix_2_connectivity_list(
-#             mask_matrix_encoding.reshape(input_size, joint_feature_size)
-#             # input_size=input_size,
-#             # joint_feature_size=joint_feature_size,
-#             # mask_matrix_encoding=mask_matrix_encoding
-#         )
-#         return cls(
-#             connectivity=connectivity, 
-#             input_size=input_size, 
-#             joint_feature_size=joint_feature_size)
-
-#     @classmethod
-#     def from_mask_matrix_encoding_to_connectivity(
-#             cls, 
-#             *,
-#             input_size:int,
-#             joint_feature_size:int,
-#             mask_matrix_encoding:torch.Tensor) -> torch.Tensor:
-#         return mask_matrix_2_connectivity_list(
-#             mask_matrix_encoding.reshape(input_size, joint_feature_size)
-#         ) 
-    
-#     def total_max_num_conn(self):
-#         return self.input_size * self.joint_feature_size
-    
-#     def total_num_conn(self):
-#         return self.connectivity.shape[1]
-
-#     def get_connectivities(self):
-#         return self.connectivity
-
-#     def get_mask_matrix_encoding(self) -> torch.Tensor:
-#         return self.mask_matrix.flatten()
-
-#     def forward(self, x: torch.Tensor):
-#         bsize_x, input_size_x = x.shape
-#         assert self.input_size == input_size_x
-
-#         # TODO : bug here, x[x==0] = 1 ... original value can == 1
-#         x = x.unsqueeze(-1) 
-#         assert x.shape == (bsize_x, self.input_size, 1)
-#         # add joint_feature_size dimension
-#         # x size = (bsize, input_size, 1)
-#         x = x * self.mask_matrix 
-#         x = x.clone()
-#         x[x == 0] = 1
-#         # print(x)
-#         assert x.shape == (bsize_x, self.input_size, self.joint_feature_size)
-#         # broadcast over joint_feature_size
-#         # mask out non-connected weights
-#         # x size = (bsize, input_size, joint_feature_size)
-
-#         x = x.prod(dim=1, ) 
-#         x = x.clone()
-#         x[x == 1] = 0
-#         # product over input_size
-#         assert x.shape == (bsize_x, self.joint_feature_size)
-        
-#         return x
-
-# def test_sparse_prod():
-#     in_size = 4
-#     joint_feature_size = 5
-#     num_connections = 3
-#     connectivity = torch.Tensor([[1,2,2], [0,1,3]])
-#     sparse_prod = SparseProd(
-#         connectivity=connectivity, 
-#         input_size=in_size, 
-#         joint_feature_size=joint_feature_size)
-#     assert sparse_prod.find_sparsity() == (1 - num_connections / (in_size * joint_feature_size))
-#     assert sparse_prod.mask_matrix.shape == (in_size, joint_feature_size)
-#     assert (sparse_prod.mask_matrix == adjacency_list_2_mask_matrix(connectivity, in_size, joint_feature_size)).all()
-#     assert (sparse_prod.mask_matrix == sparse_prod.get_mask_matrix_encoding().reshape(in_size, joint_feature_size)).all()
-#     assert (sparse_prod.connectivity == sparse_prod.get_connectivities()).all()
-#     assert (sparse_prod.connectivity == mask_matrix_2_connectivity_list(sparse_prod.mask_matrix)).all()
-#     assert (sparse_prod.connectivity == sparse_prod.from_mask_matrix_encoding_to_connectivity(
-#         input_size=in_size, joint_feature_size=joint_feature_size, mask_matrix_encoding=sparse_prod.get_mask_matrix_encoding())).all()
-#     assert (sparse_prod.from_mask_matrix_encoding(
-#         input_size=in_size, joint_feature_size=joint_feature_size, mask_matrix_encoding=sparse_prod.get_mask_matrix_encoding()).connectivity == sparse_prod.connectivity).all()
-#     # sparse_prod.connectivity = torch.Tensor([[1, 2], [3, 4]])
-
-#     print(sparse_prod.get_connectivities())
-#     print(sparse_prod.get_mask_matrix_encoding())
-#     x = torch.Tensor([[1, 2, 3, 4], [11,12,13,14]])
-#     # print(sparse_prod(x))
-
-#     assert (sparse_prod(x) == torch.torch.Tensor([[  0.,   0.,   8.,   0.,   0.], [  0.,  11., 168.,   0.,   0.]])).all()
-
 class ProdCollectiveAS(SparseABC):
+    """
+    joint attack and support using product t-norm operator
+    """
     def __init__(self, *, input_size: int, output_size: int, connectivities: torch.Tensor):
         super().__init__()
         self.input_size = input_size
@@ -269,6 +18,12 @@ class ProdCollectiveAS(SparseABC):
 
     @classmethod
     def from_mask_matrix_encoding(cls, *,  input_size: int, output_size: int, mask_matrix_encoding: torch.Tensor):
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         connectivity = ProdCollectiveAS.from_mask_matrix_encoding_to_connectivity(
             input_size=input_size,
             output_size=output_size,
@@ -285,20 +40,36 @@ class ProdCollectiveAS(SparseABC):
             input_size:int,
             output_size:int,
             mask_matrix_encoding:torch.Tensor) -> torch.Tensor:
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         return mask_matrix_2_connectivity_list(
             mask_matrix_encoding.reshape(input_size, output_size)
         ) 
     
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return self.input_size * self.output_size
     
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         return self.output_size
 
     def get_connectivities(self):
         return self.connectivities
 
     def get_mask_matrix_encoding(self) -> torch.Tensor:
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         return self.mask_matrix.squeeze(0).T.flatten().contiguous()
 
     def describe(self, linear:SparseLinearEnhanced):
@@ -320,7 +91,8 @@ class ProdCollectiveAS(SparseABC):
         return result
 
     def forward(self, x: torch.Tensor):
-        # impl 1
+        # map to log space, addition becomes multiplication
+        # map back to normal space
         x = torch.log(x)
         x = x.clamp(-50, 50)
         x = x.unsqueeze(-1)
@@ -328,24 +100,6 @@ class ProdCollectiveAS(SparseABC):
         x = x.squeeze(-1)
         x = torch.exp(x)
         return x * self.weight
-
-        # bsize_x, input_size_x = x.shape
-        # assert self.input_size == input_size_x
-        # result = torch.zeros(bsize_x, self.output_size)
-        # x = x.repeat(1, 1, self.output_size)
-        # assert x.shape == (bsize_x, self.input_size, self.output_size)
-        # x[:, ~self.mask_matrix] = 1
-        # x = x.prod(dim=1)
-        # self.weight[self.weight_mask] = 0
-        # return x * self.weight
-
-        self.mask_matrix = self.mask_matrix.to(torch.bool)
-        assert self.mask_matrix.shape == (self.input_size, self.output_size)
-        for ith_batch, batch in enumerate(x):
-            for ith_result, ith_mask in enumerate(self.mask_matrix.T):
-                result[ith_batch, ith_result] = batch[ith_mask].prod() * self.weight[ith_result]
-
-        return result
 
 def test_prod_collective_as():
     input_size = 3
@@ -367,76 +121,9 @@ def test_prod_collective_as():
         out_size=output_size).flatten()).all()
 
 
-
-
-# class ProdCollectiveAS(SparseABC):
-#     def __init__(self, *, input_size, joint_feature_size, output_size, connections_input_joint, connections_joint_output):
-#         super().__init__()
-#         self.input_size = input_size
-#         self.joint_feature_size = joint_feature_size
-#         self.output_size = output_size
-#         self.prod = SparseProd(
-#             connectivity=connections_input_joint, 
-#             input_size=input_size, 
-#             joint_feature_size=joint_feature_size, 
-#         )
-#         self.sparse_linear = SparseLinearEnhanced(joint_feature_size, output_size, connectivity=connections_joint_output)
-
-    
-#     def total_max_num_conn(self):
-#         return self.input_size * self.joint_feature_size + self.joint_feature_size * self.output_size
-    
-#     def total_num_conn(self):
-#         return self.prod.total_num_conn() + self.sparse_linear.total_num_conn()
-
-#     @classmethod
-#     def from_flattened_mask_matrices(
-#             cls, 
-#             input_size, 
-#             joint_feature_size, 
-#             output_size, 
-#             flattened_mask_matrices: torch.Tensor) -> "ProdCollectiveAS":
-#         connectivity_input_joint, connectivity_joint_output = cls.from_flattened_mask_matrices(
-#             input_size=input_size,
-#             joint_feature_size=joint_feature_size,
-#             output_size=output_size,
-#             flattened_mask_matrices=flattened_mask_matrices
-#         )
-#         return ProdCollectiveAS(
-#             input_size=input_size, 
-#             joint_feature_size=joint_feature_size, 
-#             output_size=output_size, 
-#             connectivity_input_joint=connectivity_input_joint, 
-#             connectivity_joint_output=connectivity_joint_output)
-
-#     def forward(self, x):
-#         x = self.prod(x)
-#         x = self.sparse_linear(x)
-#         return x
-    
-#     def get_connectivities(self):
-#         return [self.prod.get_connectivities(), self.sparse_linear.get_connectivities()]
-
-#     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
-#         return [self.prod.get_mask_matrix_encoding(), self.sparse_linear.get_mask_matrix_encoding()]
-
-#     @classmethod
-#     def from_mask_matrix_encoding_to_connectivities(self, mask_matrix_encoding, input_size, joint_feature_size, output_size):
-#         prod_encoding, sparse_linear_encoding = mask_matrix_encoding
-#         prod_connectivity = mask_matrix_2_connectivity_list(
-#             prod_encoding.reshape(input_size, joint_feature_size)
-#         )
-#         sparse_linear_connectivity = mask_matrix_2_connectivity_list(
-#             sparse_linear_encoding.reshape(joint_feature_size, output_size)
-#         )
-#         return (prod_connectivity, sparse_linear_connectivity)
-
-
-
-
 class JASGBAG(SparseABC):
     """
-    Implementation of a Gradual Bipolar Argumentation Graph / edge-weighted QBAF with joint support attack
+    Implementation of a QBAF with joint support attack
     """
     def __init__(self, 
         no_softmax=False,
@@ -484,6 +171,10 @@ class JASGBAG(SparseABC):
             self.output_layer = nn.Softmax()
     
     def reduced_num_conn(self):
+        """
+        remove not meaningful connections
+        returns the number of connections after removing
+        """
         connectivity2_all = torch.hstack((
             self.sparse_linear2.connectivity,
             self.collective2.get_connectivities()))
@@ -546,13 +237,20 @@ class JASGBAG(SparseABC):
         }
 
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return self.sparse_linear1.total_max_num_conn() + self.collective1.total_max_num_conn() + self.sparse_linear2.total_max_num_conn() + self.collective2.total_max_num_conn()
     
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         return self.sparse_linear1.total_num_conn() + self.collective1.total_num_conn() + self.sparse_linear2.total_num_conn() + self.collective2.total_num_conn()
 
     @classmethod
     def random_connectivity_init(cls, params, no_softmax=False):
+        # initialize the network with random connectivity matrix
         input_size = params["input_size"]
         hidden_size = params["hidden_size"]
         output_size = params["output_size"]
@@ -590,6 +288,12 @@ class JASGBAG(SparseABC):
             joint_connection_size1,
             joint_connection_size2,
             mask_matrix_encoding) -> List[torch.Tensor]:
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         encoding_sparse_linear1 = mask_matrix_encoding[0]
         encoding_collective1 = mask_matrix_encoding[1]
         encoding_sparse_linear2 = mask_matrix_encoding[2]
@@ -623,6 +327,12 @@ class JASGBAG(SparseABC):
             params,
             mask_matrix_encoding : List[torch.Tensor], 
             ):
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         input_size = params["input_size"]
         hidden_size = params["hidden_size"]
         output_size = params["output_size"]
@@ -656,6 +366,10 @@ class JASGBAG(SparseABC):
             self.collective2.get_connectivities())
 
     def get_mask_matrix_encoding(self):
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         return [self.sparse_linear1.get_mask_matrix_encoding(),
             self.collective1.get_mask_matrix_encoding(),
             self.sparse_linear2.get_mask_matrix_encoding(),

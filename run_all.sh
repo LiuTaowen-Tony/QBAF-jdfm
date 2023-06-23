@@ -5,7 +5,7 @@ for d in iris mushroom adult; do
     for j in {0..2}; do 
       for dd in direct no; do
         for ff in fuzzy no; do
-          python run_exp_multigbag.py $d $j $s $dd sp $ff
+          python run_exp.py $d $j $s $dd sp $ff
         done
       done
     done

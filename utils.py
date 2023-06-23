@@ -16,6 +16,12 @@ def group_2(l : list):
     return list(zip(l, l[1:]))
 
 def fuzzy_binning(features, n_bins: int, feature_names):
+    """
+    fuzzy binning algorithm as described in report
+    assign fuzzy values to each fuzzy set
+    n_bins: number of bins
+    feature_names: list of feature names
+    """
     X = []
     binning_feature_names = []
     for i in range(features.shape[1]):

@@ -43,6 +43,10 @@ class SparseABC(nn.Module):
 
     @abstractmethod
     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         pass
 
     @abstractmethod
@@ -58,10 +62,16 @@ class SparseABC(nn.Module):
 
     @abstractmethod
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         pass
 
     @abstractmethod
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         pass
 
     @abstractmethod
@@ -74,6 +84,10 @@ class SparseAlgo(SparseABC):
     
     @abstractmethod
     def reduced_num_conn(self):
+        """
+        remove not meaningful connections
+        returns the number of connections after removing
+        """
         pass
 
     @abstractmethod
@@ -106,15 +120,25 @@ class SparseLinearEnhanced(SparseLinear, SparseABC):
         self.mask_matrix = adjacency_list_2_mask_matrix(connectivity, in_features, out_features)
 
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return self.in_features * self.out_features
     
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         return self.connectivity.shape[1]
 
     def get_connectivities(self):
         return self.connectivity
 
     def get_mask_matrix_encoding(self):
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         return adjacency_list_2_mask_matrix(
             self.connectivity,
             self.in_features,
@@ -144,6 +168,12 @@ class SparseLinearEnhanced(SparseLinear, SparseABC):
             input_size:int,
             output_size:int,
             mask_matrix_encoding:torch.Tensor)->torch.Tensor:
+        """Converts the genotype back to the phenotype.
+
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         return mask_matrix_2_connectivity_list(
             mask_matrix_encoding.reshape(input_size, output_size)
         )
@@ -154,13 +184,17 @@ class SparseLinearEnhanced(SparseLinear, SparseABC):
         *,
         input_size:int,
         output_size:int,
-        mask_matrix_encoding:torch.Tensor
-    ) -> "SparseLinearEnhanced":
-       return SparseLinearEnhanced(
-           in_features=input_size,
-           out_features=output_size,
-           connectivity=mask_matrix_encoding
-       ) 
+        mask_matrix_encoding:torch.Tensor) -> "SparseLinearEnhanced":
+        """Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
+        return SparseLinearEnhanced(
+            in_features=input_size,
+            out_features=output_size,
+            connectivity=mask_matrix_encoding
+        ) 
 
 def test_sparse_linear_enhanced():
     in_size = 10

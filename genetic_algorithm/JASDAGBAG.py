@@ -6,6 +6,10 @@ import torch
 import math
 
 class JASDAGBAG(SparseAlgo):
+    """
+    QBAF with both joint attack and support and direct attack and support.
+    JASDAGBAG is a DAGBAG with a JASGBAG as the main component.
+    """
     def __init__(self,
                  *,
                  jasgbag: JASGBAG,
@@ -32,6 +36,10 @@ class JASDAGBAG(SparseAlgo):
         ]
 
     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         return [
             *self.jasgbag.get_mask_matrix_encoding(),
             self.sparse_linear_skip.get_mask_matrix_encoding()
@@ -44,11 +52,21 @@ class JASDAGBAG(SparseAlgo):
         }
     
     def reduced_num_conn(self):
+        """
+        remove not meaningful connections
+        returns the number of connections after removing
+        """
         return self.jasgbag.reduced_num_conn() + self.sparse_linear_skip.total_num_conn()
     
 
     @classmethod
     def from_mask_matrix_encoding(cls, params, mask_matrix_encoding: List[torch.Tensor]):
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         jas_enc = mask_matrix_encoding[:4]
         jas_conn = JASGBAG.from_mask_matrix_encoding_to_connectivities(
             input_size = params['input_size'],
@@ -89,9 +107,15 @@ class JASDAGBAG(SparseAlgo):
         )
 
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         return self.jasgbag.total_num_conn() + self.sparse_linear_skip.total_num_conn()
 
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return self.jasgbag.total_max_num_conn() + self.sparse_linear_skip.total_max_num_conn()
 
     

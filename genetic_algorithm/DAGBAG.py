@@ -5,6 +5,9 @@ from typing import List
 from genetic_algorithm.SparseAlgo import *
 
 class DAGBAG(SparseABC):
+    """
+    QBAF with both joint attack and support and direct attack and support.
+    """
     def __init__(self, input_size, hidden_size, output_size,
                  connections1, connections2, skip_connections):
         super().__init__()
@@ -30,6 +33,10 @@ class DAGBAG(SparseABC):
         ]
 
     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         return [
             self.sparse_linear1.get_mask_matrix_encoding(),
             self.sparse_linear2.get_mask_matrix_encoding(),
@@ -90,6 +97,12 @@ class DAGBAG(SparseABC):
             hidden_size: int,
             output_size: int,
             mask_matrix_encoding: List[torch.Tensor]) -> List[torch.Tensor]:
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         connectivity1 = SparseLinearEnhanced.from_mask_matrix_encoding_to_connectivity(
             input_size=input_size,
             output_size=hidden_size,
@@ -155,11 +168,17 @@ class DAGBAG(SparseABC):
         )
 
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return self.sparse_linear1.total_max_num_conn() + \
                 self.sparse_linear2.total_max_num_conn() + \
                 self.sparse_linear_skip.total_max_num_conn()
 
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         return self.sparse_linear1.total_num_conn() + \
                 self.sparse_linear2.total_num_conn() + \
                 self.sparse_linear_skip.total_num_conn()

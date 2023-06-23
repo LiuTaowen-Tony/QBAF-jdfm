@@ -19,17 +19,11 @@ device = torch.device("cpu")
 
 def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
     base_config =  {
-
         'number_runs': 10, 
-
         'population_size': 20, 'number_generations': 10, 
-
         'learning_rate': 0.005, 'number_epochs': 300, 
-        
         'hidden_size': 12, 'number_connections1': 6, 'number_connections2': 6, 
-        
         'lambda': 0.05, 
-        
         'crossover_rate': 0.9, 'mutation_rate': 0.001, 
         'patience_ES': 5, 'tolerance_ES': 1e-4, 'elitist_pct': 0.1, 'patience_GA': 5, 'tolerance_GA': 1e-4}
 
@@ -40,14 +34,6 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
 
     model_name = 'MULTIGBAG'
     base_config['is_fuzzy'] = is_fuzzy
-    # if num_of_jas != 0 and has_direct:
-    #     model_name = 'JASDAGBAG'
-    # elif num_of_jas != 0:
-    #     model_name = 'JASGBAG'
-    # elif has_direct:
-    #     model_name = 'DAGBAG'
-    # else:
-    #     model_name = 'GBAG'
 
     base_config['model_name'] = model_name
     base_config['dataset'] = dataset

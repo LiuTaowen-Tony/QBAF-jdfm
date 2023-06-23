@@ -1,3 +1,5 @@
+import socket
+import os
 import numpy as np
 import torch
 import csv
@@ -84,12 +86,12 @@ class GeneralGeneticAlgorithm():
 
     loss_function : loss function for parameter and structure learning
 
-    show_graph : show argumentation classifier graph
-                {'True', 'False'}, default='False'
-
-    show_plots : show plots for mean and best fitness, training and validation loss and confusion matrix
-                {'True', 'False'}, default='False'
-
+    x_train : training data
+    y_train : training labels
+    x_val : validation data
+    y_val : validation labels
+    x_test : test data
+    y_test : test labels
     """
 
     def __init__(
@@ -107,8 +109,6 @@ class GeneralGeneticAlgorithm():
         y_val,
         x_test,
         y_test,
-        show_graph=False,
-        show_plots=False,
     ):
         self.input_size = input_size
         self.output_size = output_size
@@ -131,8 +131,6 @@ class GeneralGeneticAlgorithm():
             )
         self.params = params
         self.loss_function = loss_function
-        self.show_graph = show_graph
-        self.show_plots = show_plots
         self.population = None        
         train_ds = TensorDataset(x_train, y_train)
         self.train_dl = DataLoader(train_ds, batch_size=25, shuffle=True)
@@ -156,6 +154,12 @@ class GeneralGeneticAlgorithm():
             self, 
             flattened_mask_matrices_list: List[torch.Tensor]
         ) -> List[SparseAlgo]:
+        """Converts the genotype back to the phenotype.
+
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         cls = self.params["algo_class"]
         return [cls.from_flattened_mask_matrices(
                 params=self.params,
@@ -171,25 +175,6 @@ class GeneralGeneticAlgorithm():
                 cls.random_connectivity_init( self.params)
             )
 
-        # joint_feature_proportion = self.params["joint_feature_proportion"]
-        # normal_feature_proportion = 1 - joint_feature_proportion
-        # n_connections_input_hidden = math.ceil(self.params["n_connections_input_hidden"] * normal_feature_proportion)
-        # n_connections_hidden_output = math.ceil(self.params["n_connections_hidden_output"] * normal_feature_proportion)
-        # n_connections_jointly_input_hidden = math.floor(self.params["n_connections_input_hidden"] * joint_feature_proportion)
-        # n_connections_jointly_hidden_output = math.floor(self.params["n_connections_hidden_output"] * joint_feature_proportion)
-        # self.population = []
-        # for _ in range(self.params["population_size"]):
-        #     self.population.append(
-        #         SparseAlgo.random_connectivity_init(
-        #             input_size=self.input_size,
-        #             hidden_size=self.params["hidden_neuron_size"],
-        #             output_size=self.output_size,
-        #             n_connections_input_hidden=n_connections_input_hidden,
-        #             n_connections_hidden_output=n_connections_hidden_output,
-        #             n_connections_jointly_input_hidden=n_connections_jointly_input_hidden,
-        #             n_connections_jointly_hidden_output=n_connections_jointly_hidden_output,
-        #         )
-        #     )
 
     def create_new_generation(self, elitist: List[SparseAlgo], mutated_encodings: List[torch.Tensor]):
         """Creates a new generation.
@@ -198,26 +183,21 @@ class GeneralGeneticAlgorithm():
 
         Args:
             elitist: A list containing the best individuals.
-            mutation_offspring: The first half of the mutated offspring.
-            mutation_offspring2: The second half of the mutated offspring.
+            mutation_offspring: The mutated offspring.
         """
         
         cls = self.params["algo_class"]
         self.population = []
         for i in elitist:
-            # if i.total_num_conn() > self.mean_num_connections + 2:
-            #     i = cls.random_connectivity_init(self.params)
             self.population.append(i)
 
-        # reshape connectivity matrices and create new G-BAGs (offspring) given the new connectivity matrix
+        # reshape connectivity matrices and create newoffspring given the new connectivity matrix
         new_generation_size = math.ceil((1 - self.params["elitist_pct"]) * self.params["population_size"])
         i = 0
         while i < new_generation_size:
             child = cls.from_mask_matrix_encoding(
                 params=self.params,
                 mask_matrix_encoding=mutated_encodings[i])
-            # if child.total_num_conn() > self.mean_num_connections + 1:
-            #     child = cls.random_connectivity_init(self.params)
             self.population.append(child)
             i += 1
 
@@ -225,7 +205,6 @@ class GeneralGeneticAlgorithm():
         self,
         population: List[SparseAlgo],
         opt_func=torch.optim.Adam,
-        minibatch=True,
     ):
         """Gets the fitness/loss of each individual."""
 
@@ -249,8 +228,8 @@ class GeneralGeneticAlgorithm():
             for epoch in range(self.params["number_epochs"]):
                 batch_loss = 0.0
                 batch_accuracy = 0.0
+                # train the model
                 for nb, (x_batch, y_batch) in enumerate(self.train_dl):
-                    # print(nb)
                     optimizer.zero_grad()
                     y_pred_train = individual(x_batch)
                     loss = self.loss_function(y_pred_train, y_batch)
@@ -267,6 +246,9 @@ class GeneralGeneticAlgorithm():
                     sp_for_fit = relative_sparsity
                 else:
                     sp_for_fit = individual.find_sparsity()
+
+                # fitness is a weighted sum of accuracy and sparsity
+                # evaluate the model
                 individual.fitness = ((1 - self.params["lambda"]) * accuracy 
                                       + self.params["lambda"] * (sp_for_fit))
                 individual.accuracy = accuracy
@@ -289,18 +271,8 @@ class GeneralGeneticAlgorithm():
                     break
             individual.val_loss = validation_loss
 
-    def run(
-        self,
-        input_labels,
-        class_labels,
-    ):
+    def run( self,):
         """Runs the genetic algorithm for a given configuration.
-
-        inputs:
-                - training (tr), validation (val) and test (te) data
-                - input labels (array containing labels of input features)
-                - class labels (array containing class labels)
-                - file name for csv to save results
         """
         self.create_population()
         print("Initial population created")
@@ -315,6 +287,7 @@ class GeneralGeneticAlgorithm():
         for g in range(self.params["number_generations"]):
             print(f"Generation {g}")
 
+            # logging
             n_conns = [indiv.total_num_conn() for indiv in self.population]
             hist_count, hist_bins = np.histogram(n_conns, bins=10)
             print("histogram of n_conns values", hist_count, hist_bins)
@@ -410,6 +383,7 @@ class GeneralGeneticAlgorithm():
             print("Generation {} finished".format(g + 1))
             print(f"Best fitness: {best_fitness[-1]}")
 
+        # ALL GENERATIONS FINISHED
         # select best individual and return results
         acc = [indiv.accuracy for indiv in self.population]
         fitness = [indiv.fitness for indiv in self.population]
@@ -446,52 +420,11 @@ class GeneralGeneticAlgorithm():
             recall = recall_score(labels, classes, average="macro")
             f1 = f1_score(labels, classes, average="macro")
 
-        # remove not meaningful connections
-        # rem, i_ind = remove_connections(clf)
         num_connections = clf.reduced_num_conn()
         
         print("Best individual - number of connections: {}".format(num_connections))
 
-        # visualizations (default: not shown, set 'show_plots' to 'True' otherwise)
-        #  if self.show_plots:
-            #  plot_fitness(best_fitness, mean_fitness)
-            #  plot_loss(clf.training_loss, clf.val_loss)
-            #  plot_conf_matrix(labels, classes, class_labels)
-
-        # draw argumentation classifier (default: not shown, set 'show_graph' to 'True' otherwise)
-        #  if self.show_graph:
-            #  inp_used = []
-            #  for inn in i_ind:
-                #  inp_used.append(input_labels[inn.item()])
-#
-            #  ind1 = rem.sparse_linear1.weight._indices()
-            #  val1 = rem.sparse_linear1.weight._values()
-            #  s1 = rem.sparse_linear1.out_features
-            #  s2 = rem.sparse_linear1.in_features
-            #  weights1 = torch.sparse.FloatTensor(
-                #  ind1, val1, torch.Size([s1, s2])
-            #  ).to_dense()
-#
-            #  ind2 = rem.sparse_linear2.weight._indices()
-            #  val2 = rem.sparse_linear2.weight._values()
-            #  s3 = rem.sparse_linear2.out_features
-            #  s4 = rem.sparse_linear2.in_features
-            #  weights2 = torch.sparse.FloatTensor(
-                #  ind2, val2, torch.Size([s3, s4])
-            #  ).to_dense()
-#
-            #  number_of_neurons_in_widest_layer = max(
-                #  rem.sparse_linear1.in_features, rem.sparse_linear2.out_features
-            #  )
-            #  network = NeuralNetwork(number_of_neurons_in_widest_layer)
-            #  network.add_layer(s2, weights1)
-            #  network.add_layer(s4, weights2)
-            #  network.add_layer(s3)
-            #  network.draw(inp_used, class_labels)
-
         # write results to csv file
-        import socket
-        import os
         host_name = socket.gethostname()
         dataset_name = self.params["dataset"]
         config_name = self.params["config_name"]
@@ -506,6 +439,8 @@ class GeneralGeneticAlgorithm():
             os.makedirs(folder_name)
         if not os.path.exists("describe"):
             os.makedirs("describe")
+        # write the structure of the best model to file, 
+        # so that can be visualise
         file_name_describe = file_name[:-4] + "_describe.txt"
         import json
         with open(f"describe/{file_name_describe}", "a") as file:

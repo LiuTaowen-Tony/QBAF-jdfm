@@ -3,6 +3,9 @@ import torch
 from torch import nn
 from genetic_algorithm.SparseAlgo import *
 class MultiGBAG(SparseAlgo):
+    """
+    QBAF model with 2 hidden layers. One more hidden layer than the baseline model
+    """
     def __init__(self,
                  input_size,
                 hidden_size1,
@@ -35,6 +38,10 @@ class MultiGBAG(SparseAlgo):
         ]
     
     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         return [
             self.sparse_linear1.get_mask_matrix_encoding(),
             self.sparse_linear2.get_mask_matrix_encoding(),
@@ -67,6 +74,12 @@ class MultiGBAG(SparseAlgo):
     
     @classmethod
     def from_mask_matrix_encoding_to_connectivity(cls, params, mask_matrix_encoding):
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         input_size = params["input_size"]
         hidden_size1 = params["hidden_size1"]
         hidden_size2 = params["hidden_size2"]
@@ -95,6 +108,12 @@ class MultiGBAG(SparseAlgo):
 
     @classmethod
     def from_mask_matrix_encoding(cls, params, mask_matrix_encoding):
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         connectivities = MultiGBAG.from_mask_matrix_encoding_to_connectivity(params, mask_matrix_encoding)
         input_size = params["input_size"]
         hidden_size1 = params["hidden_size1"]
@@ -119,6 +138,10 @@ class MultiGBAG(SparseAlgo):
         }
     
     def reduced_num_conn(self):
+        """
+        remove not meaningful connections
+        returns the number of connections after removing
+        """
         sl1_before = self.sparse_linear1.connectivity
         sl2_before = self.sparse_linear2.connectivity
         sl3_before = self.sparse_linear3.connectivity
@@ -164,11 +187,17 @@ class MultiGBAG(SparseAlgo):
         return len(sl1_after) + len(sl2_after2) + len(sl3_after)
     
     def total_num_conn(self):
+        """
+        Returns the total number of connections in the network.
+        """
         return (self.sparse_linear1.total_num_conn() + 
                 self.sparse_linear2.total_num_conn() + 
                 self.sparse_linear3.total_num_conn())
     
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return (self.sparse_linear1.total_max_num_conn() +
                 self.sparse_linear2.total_max_num_conn() +
                 self.sparse_linear3.total_max_num_conn())

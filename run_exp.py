@@ -18,93 +18,98 @@ warnings.filterwarnings("ignore")
 device = torch.device("cpu")
 
 def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
+    """
+    Parse config for each dataset
+    dataset: name of dataset
+    num_of_jas: number of joint attack and support
+    which_size: which size of model to use
+    has_direct: whether to use direct attack and support
+    relative_sparsity: whether to use relative sparsity
+    is_fuzzy: whether to use fuzzy input transformation
+
+    return: config for the dataset
+
+    There are 3 steps in this function:
+    1. set model size specific parameters
+    2. set extension specific parameters
+    3. set dataset specific parameters
+    """
     base_config =  {
-
         'number_runs': 10, 
-
         'population_size': 20, 'number_generations': 10, 
-
         'learning_rate': 0.01, 'number_epochs': 300, 
-        
         'hidden_size': 12, 'number_connections1': 6, 'number_connections2': 6, 
-        
         'lambda': 0.05, 
-        
         'crossover_rate': 0.9, 'mutation_rate': 0.001, 
-        'patience_ES': 5, 'tolerance_ES': 3e-3, 'elitist_pct': 0.1, 'patience_GA': 5, 'tolerance_GA': 1e-4}
+        #  ES: Gradient Descent Early Stopping
+        #  GA: Genetic Algorithm Early Stopping
+        'patience_ES': 5, 'tolerance_ES': 3e-3, 'elitist_pct': 0.1, 
+        'patience_GA': 5, 'tolerance_GA': 1e-4}
+
+    # MODEL SIZE SPECIFIC PARAMETERS ==============================
+    neuron_configs = {
+        1: { 'hidden_size': 12,
+            'number_connections1': 10,
+            'number_connections2': 6, },
+        2: { 'hidden_size': 12,
+            'number_connections1': 6,
+            'number_connections2': 6, },
+        3: { 'hidden_size': 8,
+            'number_connections1': 4,
+            'number_connections2': 4, },
+        4: { 'hidden_size': 6,
+            'number_connections1': 4,
+            'number_connections2':2, },
+        5: { 'hidden_size': 4,
+            'number_connections1': 4,
+            'number_connections2':2, },
+    }
+
+    neuron_config = neuron_configs[which_size]
 
     if relative_sparsity:
         base_config['relative_sparsity'] = True
-        if dataset == 'adult':
-            'lambda: 0.02'
-    if dataset == 'iris':
-        base_config['tolerance_ES'] = 1e-4
-
     base_config['is_fuzzy'] = is_fuzzy
-    if num_of_jas != 0 and has_direct:
-        model_name = 'JASDAGBAG'
-    elif num_of_jas != 0:
-        model_name = 'JASGBAG'
-    elif has_direct:
+
+    # EXTENSION SPECIFIC PARAMETERS ============================== 
+    # if has joint attack and support
+    if num_of_jas != 0:
+        # swap normal connections with joint attack and support
+        neuron_config['number_connections1'] -= num_of_jas
+        neuron_config.update({ 
+            "joint_connections_size1": num_of_jas,
+            "joint_connections_size2": 1,
+            "joint_connections_input_num1": 4,
+            "joint_connections_input_num2": 2, })
+        # if has joint attack and support and have direct connection
+        if has_direct:
+            model_name = 'JASDAGBAG' 
+            neuron_config['number_connections_skip'] = 1 # add direct connection
+        else: # only has joint attack and support
+            model_name = 'JASGBAG'
+
+    # if has direct connection but no joint attack and support
+    elif has_direct and num_of_jas == 0:
         model_name = 'DAGBAG'
+        neuron_config['number_connections_skip'] = 1 # add direct connection
+
+    # if has no direct connection and no joint attack and support
     else:
-        model_name = 'GBAG'
+        model_name = 'GBAG' # baseline model
 
     base_config['model_name'] = model_name
-    base_config['dataset'] = dataset
 
+    # DATASET SEPECIFIC PARAMETERS ==============================
+    base_config['dataset'] = dataset
     if dataset == 'iris':
         base_config['population_size'] = 20
+        base_config['tolerance_ES'] = 1e-4
     elif dataset == 'adult':
         base_config['population_size'] = 50
     elif dataset == 'mushroom':
         base_config['population_size'] = 30
 
-    neuron_configs = {
-        1: {
-            'hidden_size': 12,
-            'number_connections1': 10,
-            'number_connections2': 6,
-        },
-        2: {
-            'hidden_size': 12,
-            'number_connections1': 6,
-            'number_connections2': 6,
-        },
-        3: {
-            'hidden_size': 8,
-            'number_connections1': 4,
-            'number_connections2': 4,
-        },
-        4: {
-            'hidden_size': 6,
-            'number_connections1': 4,
-            'number_connections2':2,
-        },
-        5: {
-            'hidden_size': 4,
-            'number_connections1': 4,
-            'number_connections2':2,
-        },
-    }
-
-    neuron_config = neuron_configs[which_size]
-
-    if num_of_jas != 0:
-        neuron_config['number_connections1'] -= num_of_jas
-        neuron_config.update(
-         {
-         "joint_connections_size1": num_of_jas,
-         "joint_connections_size2": 1,
-         "joint_connections_input_num1": 4,
-         "joint_connections_input_num2": 2,
-         }
-        )
-
-    if has_direct:
-        neuron_config['number_connections_skip'] = 1
-
-
+    # for logging purpose, to distinguish different experiments
     fuzzy_str = 'fuzzy' if is_fuzzy else 'nf'
     sparsity_str = 'sp' if relative_sparsity else 'nsp'
     config_name = f'{dataset}_{fuzzy_str}_{model_name}_s{which_size}_j{num_of_jas}_{sparsity_str}_new'
@@ -114,7 +119,7 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     return base_config
 
 
-# def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
+# parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
 parameters = parse_config(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]),
              sys.argv[4] == 'direct', sys.argv[5] == 'sp',
              sys.argv[6] == 'fuzzy')
@@ -129,6 +134,7 @@ elif dataset == "mushroom":
 elif dataset == "iris":
     X, y, inputs, label = load_iris(is_fuzzy=parameters["is_fuzzy"])
 
+# initialize model according to model name
 model_name = parameters["model_name"]
 if model_name == "GBAG":
     parameters["algo_class"] = GBAG

@@ -73,6 +73,10 @@ class GBAG(SparseAlgo):
         return GBAG(input_size, hidden_size, output_size, connections1, connections2)
 
     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
+        """Encodes the structure of the graph as a bit string for genetic algorithm.
+
+        The rows of the connectivity matrix are concatenated.
+        """
         connectivity1 = self.sparse_linear1.connectivity
         connectivity2 = self.sparse_linear2.connectivity
         matrix1 = flatten_connectivity_matrix(connectivity1, 
@@ -85,6 +89,15 @@ class GBAG(SparseAlgo):
 
     @classmethod
     def from_mask_matrix_encoding(cls, params, mask_matrix_encoding):
+
+
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
+
         input_size = params['input_size']
         hidden_size = params['hidden_size']
         output_size = params['output_size']
@@ -95,13 +108,24 @@ class GBAG(SparseAlgo):
         return GBAG(input_size, hidden_size, output_size, connectivity1, connectivity2)
 
     def total_num_conn(self):
+        """
+        remove not meaningful connections
+        returns the number of connections after removing
+        """
         return self.sparse_linear1.connectivity.shape[1] + self.sparse_linear2.connectivity.shape[1]
 
     def total_max_num_conn(self):
+        """
+        Returns the MAXIMUM POSSIBLE number of connections in the network.
+        """
         return self.sparse_linear1.in_features * self.sparse_linear1.out_features + \
                 self.sparse_linear2.in_features * self.sparse_linear2.out_features
 
     def reduced_num_conn(self):
+        """
+        remove not meaningful connections
+        returns the number of connections after removing
+        """        
         classifier, ind = remove_connections(self)
         return classifier.total_num_conn()
 
