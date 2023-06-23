@@ -182,8 +182,5 @@ for run in range(params["number_runs"]):
         x_test=X_te,
         y_test=y_te,
     )
-    model.run(
-        input_labels=inputs,
-        class_labels=label,
-        )
+    model.run()
 

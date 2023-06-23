@@ -1,3 +1,1 @@
-from .genetic_algorithm import GeneticAlgorithm
-from .genetic_algorithm_joint_attack_support import JointAttackSupportGeneticAlgorithm
 
