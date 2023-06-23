@@ -47,6 +47,10 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
         'patience_GA': 5, 'tolerance_GA': 1e-4}
 
     # MODEL SIZE SPECIFIC PARAMETERS ==============================
+    # model has 3  layers
+    # hidden_size: number of neuron in hidden layer
+    # connections1: number of connections between input layer and hidden layer
+    # connections2: number of connections between hidden layer and output layer
     neuron_configs = {
         1: { 'hidden_size': 12,
             'number_connections1': 10,
@@ -109,6 +113,7 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     elif dataset == 'mushroom':
         base_config['population_size'] = 30
 
+    # LOGGING PARAMETERS ==============================
     # for logging purpose, to distinguish different experiments
     fuzzy_str = 'fuzzy' if is_fuzzy else 'nf'
     sparsity_str = 'sp' if relative_sparsity else 'nsp'

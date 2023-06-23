@@ -26,72 +26,51 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
         'lambda': 0.05, 
         'crossover_rate': 0.9, 'mutation_rate': 0.001, 
         'patience_ES': 5, 'tolerance_ES': 1e-4, 'elitist_pct': 0.1, 'patience_GA': 5, 'tolerance_GA': 1e-4}
-
     if relative_sparsity:
         base_config['relative_sparsity'] = True
-        if dataset == 'adult':
-            'lambda: 0.02'
-
-    model_name = 'MULTIGBAG'
     base_config['is_fuzzy'] = is_fuzzy
-
     base_config['model_name'] = model_name
     base_config['dataset'] = dataset
 
+    # MODEL SIZE SPECIFIC PARAMETERS ==============================
+    # MultiGBAG has 4 layers
+    # hidden_size1: number of neuron in hidden layer 1
+    # hidden_size2: number of neuron in hidden layer 2
+    # connctions1: between input and hidden1
+    # connctions2: between hidden1 and hidden2
+    # connctions3: between hidden2 and output
+    neuron_configs = {
+        1: { 'hidden_size': 12,
+            'number_connections1': 10,
+            'number_connections2': 6, },
+        2: { 'hidden_size': 12,
+            'number_connections1': 6,
+            'number_connections2': 6, },
+        3: { 'hidden_size': 8,
+            'number_connections1': 4,
+            'number_connections2': 4, },
+        4: { 'hidden_size': 6,
+            'number_connections1': 4,
+            'number_connections2':2, },
+        5: { 'hidden_size': 4,
+            'number_connections1': 4,
+            'number_connections2':2, },
+    }
+    neuron_config = neuron_configs[which_size]
+    base_config['hidden_size1'] = neuron_config['hidden_size']
+    base_config['hidden_size2'] = neuron_config['hidden_size']
+    base_config['number_connections3'] = neuron_config['number_connections2']
+
+
+    model_name = 'MULTIGBAG'
+
+    # DATASET SPECIFIC PARAMETERS =================================
     if dataset == 'iris':
         base_config['population_size'] = 20
     elif dataset == 'adult':
         base_config['population_size'] = 50
     elif dataset == 'mushroom':
         base_config['population_size'] = 30
-
-    neuron_configs = {
-        1: {
-            'hidden_size': 12,
-            'number_connections1': 10,
-            'number_connections2': 6,
-        },
-        2: {
-            'hidden_size': 12,
-            'number_connections1': 6,
-            'number_connections2': 6,
-        },
-        3: {
-            'hidden_size': 8,
-            'number_connections1': 4,
-            'number_connections2': 4,
-        },
-        4: {
-            'hidden_size': 6,
-            'number_connections1': 4,
-            'number_connections2':2,
-        },
-        5: {
-            'hidden_size': 4,
-            'number_connections1': 4,
-            'number_connections2':2,
-        },
-    }
-
-    neuron_config = neuron_configs[which_size]
-    base_config['hidden_size1'] = neuron_config['hidden_size']
-    base_config['hidden_size2'] = neuron_config['hidden_size']
-    base_config['number_connections3'] = neuron_config['number_connections2']
-
-    if num_of_jas != 0:
-        neuron_config['number_connections1'] -= num_of_jas
-        neuron_config.update(
-         {
-         "joint_connections_size1": num_of_jas,
-         "joint_connections_size2": 1,
-         "joint_connections_input_num1": 4,
-         "joint_connections_input_num2": 2,
-         }
-        )
-
-    if has_direct:
-        neuron_config['number_connections_skip'] = 1
-
 
     fuzzy_str = 'fuzzy' if is_fuzzy else 'nf'
     sparsity_str = 'sp' if relative_sparsity else 'nsp'
@@ -102,7 +81,6 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     return base_config
 
 
-# def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
 parameters = parse_config(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]),
              sys.argv[4] == 'direct', sys.argv[5] == 'sp',
              sys.argv[6] == 'fuzzy')

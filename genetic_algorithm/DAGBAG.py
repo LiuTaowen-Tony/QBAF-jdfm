@@ -123,6 +123,9 @@ class DAGBAG(SparseABC):
 
     @classmethod
     def random_connectivity_init(cls, params) -> "DAGBAG":
+        """
+        Initializes the DAGBAG with random connectivity. 
+        """
         input_size = params["input_size"]
         hidden_size = params["hidden_size"]
         output_size = params["output_size"]
@@ -149,6 +152,12 @@ class DAGBAG(SparseABC):
     def from_mask_matrix_encoding(self, 
             params,
             mask_matrix_encoding: List[torch.Tensor]):
+        """
+        Converts the genotype back to the phenotype.
+        Transforms the bit string/chromosome representation back to the tensor representation.
+        First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
+        to be converted to sparse adjacency matrix of shape (m,n).
+        """
         input_size = params["input_size"]
         hidden_size = params["hidden_size"]
         output_size = params["output_size"]
