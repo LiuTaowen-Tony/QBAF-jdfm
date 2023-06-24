@@ -5,7 +5,10 @@ from genetic_algorithm.SparseAlgo import *
 
 class ProdCollectiveAS(SparseABC):
     """
-    joint attack and support using product t-norm operator
+    This is the t-norm operator for the joint attack and support QBAF
+
+    The t-norm operator is the product of the selected inputs.
+    T(Ri) = r1 * r2 * ... * rn
     """
     def __init__(self, *, input_size: int, output_size: int, connectivities: torch.Tensor):
         super().__init__()
@@ -123,8 +126,17 @@ def test_prod_collective_as():
 
 class JASGBAG(SparseABC):
     """
-    Implementation of a QBAF with joint support attack
-    """
+    The baseline model cannot capture the semantic that a single argument is 
+    sufficient to defeat another argument, but multiple arguments are 
+    required to defeat another jointly.
+
+    h = \sigma(\sum wi T(Ri) + b) $$
+    Extending a normal connection to a joint connection, ri is replaced 
+    with T(Ri). T(Ri) is a t-norm applied to a non-empty subset of 
+    the arguments from the previous layer. 
+
+    T is the product t-norm operator
+    T(Ri) = \prod ri    """
     def __init__(self, 
         no_softmax=False,
         *,

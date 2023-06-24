@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 device = torch.device("cpu")
 
-def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
+def parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
     base_config =  {
         'number_runs': 10, 
         'population_size': 20, 'number_generations': 10, 
@@ -39,6 +39,10 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     # connctions1: between input and hidden1
     # connctions2: between hidden1 and hidden2
     # connctions3: between hidden2 and output
+    #########################################
+    # hidden size 1 and 2 are the same (= hidden_size)
+    # number_connections3 is the same as number_connections2
+    #########################################
     neuron_configs = {
         1: { 'hidden_size': 12,
             'number_connections1': 10,
@@ -72,18 +76,18 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     elif dataset == 'mushroom':
         base_config['population_size'] = 30
 
+    # For logging
     fuzzy_str = 'fuzzy' if is_fuzzy else 'nf'
     sparsity_str = 'sp' if relative_sparsity else 'nsp'
-    config_name = f'{dataset}_{fuzzy_str}_{model_name}_s{which_size}_j{num_of_jas}_{sparsity_str}_new'
+    config_name = f'{dataset}_{fuzzy_str}_{model_name}_s{which_size}_{sparsity_str}_new'
     base_config['config_name'] = config_name
 
     base_config.update(neuron_config)
     return base_config
 
 
-parameters = parse_config(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]),
-             sys.argv[4] == 'direct', sys.argv[5] == 'sp',
-             sys.argv[6] == 'fuzzy')
+# parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
+parameters = parse_config(sys.argv[1],  int(sys.argv[2]), sys.argv[3] == 'sp', sys.argv[4] == 'fuzzy')
 
 print("Running with parameters:" + str(parameters), flush=True)
 

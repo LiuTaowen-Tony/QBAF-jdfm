@@ -13,5 +13,7 @@ for d in iris mushroom adult; do
 done
 
 for d in iris mushroom adult; do
-    python run_exp_multigbag.py $d 0 1 no sp no
+  for s in {1..5}; do
+    python run_exp_multigbag.py $d $s sp no
+  done
 done

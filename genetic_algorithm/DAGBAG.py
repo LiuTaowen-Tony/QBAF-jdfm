@@ -6,10 +6,35 @@ from genetic_algorithm.SparseAlgo import *
 
 class DAGBAG(SparseABC):
     """
-    QBAF with both joint attack and support and direct attack and support.
+    QBAF with direct attack and support. The baseline model uses a layered QBAF. 
+    The relationship between input and output arguments is indirect. 
+    Input arguments affect output arguments through hidden arguments. 
+    However, while analyzing the graphical structure of the baseline QBAF 
+    classifier, it is often observed that an input argument solely influences 
+    a single hidden argument, subsequently affecting only one output argument. 
+    A more general acylic QBAF could capture the direct relation between 
+    the input and output arguments. 
+
+    Our extension adds a direct attack and support term
+
+    o = \sigma(\sum wi hi + \sum wj xj + b)
+
+    hi represents the strength value of i-th hidden argument,
+    xj represents the strength value of j-th input argument. Now 
+    both input and hidden arguments can affect output arguments' strength 
+    value. This improves the expressiveness of the baseline model and 
+    removes the restriction of a "layered" structure.
     """
     def __init__(self, input_size, hidden_size, output_size,
                  connections1, connections2, skip_connections):
+        """
+        :param input_size: number of input features
+        :param hidden_size: number of hidden units
+        :param output_size: number of output units
+        :param connections1: list of tuples (to, from) for the first layer
+        :param connections2: list of tuples (to, from) for the second layer
+        :param skip_connections: list of tuples (to, from) for the skip connection
+        """
         super().__init__()
         self.sparse_linear1 = SparseLinearEnhanced(input_size, hidden_size, connectivity=connections1)
         self.sparse_linear2 = SparseLinearEnhanced(hidden_size, output_size, connectivity=connections2)
@@ -34,7 +59,6 @@ class DAGBAG(SparseABC):
 
     def get_mask_matrix_encoding(self) -> List[torch.Tensor]:
         """Encodes the structure of the graph as a bit string for genetic algorithm.
-
         The rows of the connectivity matrix are concatenated.
         """
         return [
@@ -51,6 +75,10 @@ class DAGBAG(SparseABC):
         }
 
     def reduced_num_conn(self):
+        """
+        Remove redundant connections.
+        return the number of connections after removing redundant connections.
+        """
         sl1_before = self.sparse_linear1.connectivity
         sl2_before = self.sparse_linear2.connectivity
         sl3_before = self.sparse_linear_skip.connectivity
@@ -83,12 +111,6 @@ class DAGBAG(SparseABC):
                 sl2_after.add((to, from_))
 
         return len(sl1_after) + len(sl2_after) + sl3_before.shape[1]
-
-
-
-
-
-
 
     @classmethod
     def from_mask_matrix_encoding_to_connectivity(cls,

@@ -18,6 +18,7 @@ def group_2(l : list):
 def fuzzy_binning(features, n_bins: int, feature_names):
     """
     fuzzy binning algorithm as described in report
+    using the triangular membership function
     assign fuzzy values to each fuzzy set
     n_bins: number of bins
     feature_names: list of feature names

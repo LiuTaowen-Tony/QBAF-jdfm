@@ -9,6 +9,7 @@ class JASDAGBAG(SparseAlgo):
     """
     QBAF with both joint attack and support and direct attack and support.
     JASDAGBAG is a DAGBAG with a JASGBAG as the main component.
+    please see documentation for JASGBAG and DAGBAG for more information.
     """
     def __init__(self,
                  *,

@@ -40,7 +40,6 @@ def print(*args, **kwargs):
 
     __builtins__["print"](current_time, *args, **kwargs, flush=True)
 
-
 selection_operators = {
     "roulette_wheel_selection": RouletteWheelSelection,
     "rank_selection": RankSelection,
@@ -57,7 +56,8 @@ mutation_operators = {
 
 
 class GeneralGeneticAlgorithm():
-    """Implementation of a genetic algorithm to evolve the structure of (sparse) multilayer perceptrons / GBAGs
+    """Implementation of a genetic algorithm to evolve the structure of 
+        different QBAF algorithms 
 
     Parameters
     ----------
@@ -145,7 +145,6 @@ class GeneralGeneticAlgorithm():
 
     def encode(self, parents: List[SparseAlgo]) -> List[List[torch.Tensor]]:
         """Encodes the structure of the graph as a bit string for genetic algorithm.
- 
         The rows of the connectivity matrix are concatenated.
         """
         return [p.get_mask_matrix_encoding() for p in parents]
@@ -155,7 +154,6 @@ class GeneralGeneticAlgorithm():
             flattened_mask_matrices_list: List[torch.Tensor]
         ) -> List[SparseAlgo]:
         """Converts the genotype back to the phenotype.
-
         Transforms the bit string/chromosome representation back to the tensor representation.
         First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
         to be converted to sparse adjacency matrix of shape (m,n).

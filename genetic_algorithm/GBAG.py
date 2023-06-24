@@ -26,7 +26,6 @@ def flatten_connectivity_matrix(connectivity_matrix, in_dim, out_dim) -> torch.T
 
 def decode(chromosome, shape):
     """Converts the genotype back to the phenotype.
-
     Transforms the bit string/chromosome representation back to the tensor representation.
     First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
     to be converted to sparse adjacency matrix of shape (m,n).
@@ -45,7 +44,6 @@ def decode(chromosome, shape):
 class GBAG(SparseAlgo):
     """
     Implementation of a Gradual Bipolar Argumentation Graph / edge-weighted QBAF as a sparse multi-layer perceptron
-    using SparseLinear extension library for PyTorch (https://pypi.org/project/sparselinear/)
     """
     def __init__(self, input_size, hidden_size, output_size, connections1, connections2):
         super().__init__()
@@ -63,6 +61,9 @@ class GBAG(SparseAlgo):
 
     @classmethod
     def random_connectivity_init(cls, params):
+        """
+        Initializes the GBAG with random connectivity matrices
+        """
         input_size = params['input_size']
         hidden_size = params['hidden_size']
         output_size = params['output_size']
@@ -89,15 +90,12 @@ class GBAG(SparseAlgo):
 
     @classmethod
     def from_mask_matrix_encoding(cls, params, mask_matrix_encoding):
-
-
         """
         Converts the genotype back to the phenotype.
         Transforms the bit string/chromosome representation back to the tensor representation.
         First, chromosome has to reshaped (unflattened), before the dense adjacency matrix has
         to be converted to sparse adjacency matrix of shape (m,n).
         """
-
         input_size = params['input_size']
         hidden_size = params['hidden_size']
         output_size = params['output_size']
