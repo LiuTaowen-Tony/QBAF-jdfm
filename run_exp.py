@@ -26,9 +26,8 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     has_direct: whether to use direct attack and support
     relative_sparsity: whether to use relative sparsity
     is_fuzzy: whether to use fuzzy input transformation
-
     return: config for the dataset
-
+    
     There are 3 steps in this function:
     1. set model size specific parameters
     2. set extension specific parameters
@@ -49,8 +48,8 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     # MODEL SIZE SPECIFIC PARAMETERS ==============================
     # model has 3  layers
     # hidden_size: number of neuron in hidden layer
-    # connections1: number of connections between input layer and hidden layer
-    # connections2: number of connections between hidden layer and output layer
+    # connections1: number of connections between the input layer and hidden layer
+    # connections2: number of connections between the hidden layer and output layer
     neuron_configs = {
         1: { 'hidden_size': 12,
             'number_connections1': 10,
@@ -76,7 +75,7 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     base_config['is_fuzzy'] = is_fuzzy
 
     # EXTENSION SPECIFIC PARAMETERS ============================== 
-    # if has joint attack and support
+    # If has joint attack and support
     if num_of_jas != 0:
         # swap normal connections with joint attack and support
         neuron_config['number_connections1'] -= num_of_jas
@@ -85,25 +84,25 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
             "joint_connections_size2": 1,
             "joint_connections_input_num1": 4,
             "joint_connections_input_num2": 2, })
-        # if has joint attack and support and have direct connection
+        # If has both joint attack and support and direct connection
         if has_direct:
             model_name = 'JASDAGBAG' 
             neuron_config['number_connections_skip'] = 1 # add direct connection
         else: # only has joint attack and support
             model_name = 'JASGBAG'
 
-    # if has direct connection but no joint attack and support
+    # If has direct connection but no joint attack and support
     elif has_direct and num_of_jas == 0:
         model_name = 'DAGBAG'
         neuron_config['number_connections_skip'] = 1 # add direct connection
 
-    # if has no direct connection and no joint attack and support
+    # If has no direct connection and no joint attack and support
     else:
         model_name = 'GBAG' # baseline model
 
     base_config['model_name'] = model_name
 
-    # DATASET SEPECIFIC PARAMETERS ==============================
+    # DATASET SPECIFIC PARAMETERS ==============================
     base_config['dataset'] = dataset
     if dataset == 'iris':
         base_config['population_size'] = 20
@@ -114,7 +113,7 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
         base_config['population_size'] = 30
 
     # LOGGING PARAMETERS ==============================
-    # for logging purpose, to distinguish different experiments
+    # For logging purpose, to distinguish different experiments
     fuzzy_str = 'fuzzy' if is_fuzzy else 'nf'
     sparsity_str = 'sp' if relative_sparsity else 'nsp'
     config_name = f'{dataset}_{fuzzy_str}_{model_name}_s{which_size}_j{num_of_jas}_{sparsity_str}_new'
@@ -131,6 +130,7 @@ parameters = parse_config(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]),
 
 print("Running with parameters:" + str(parameters), flush=True)
 
+# loading datasets
 dataset = parameters["dataset"]
 if dataset == "adult":
     X, y, inputs, label = load_adult(is_fuzzy=parameters["is_fuzzy"])
@@ -139,7 +139,7 @@ elif dataset == "mushroom":
 elif dataset == "iris":
     X, y, inputs, label = load_iris(is_fuzzy=parameters["is_fuzzy"])
 
-# initialize model according to model name
+# initialize model according to the model name
 model_name = parameters["model_name"]
 if model_name == "GBAG":
     parameters["algo_class"] = GBAG
