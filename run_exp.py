@@ -32,6 +32,17 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     1. set model size specific parameters
     2. set extension specific parameters
     3. set dataset specific parameters
+
+    options 
+
+    - dataset: "iris" "mushroom" "adult"
+    - joint_connection_number:  1 2
+    - size_of_QBAF: 1 2 3 4 5 where 1 is the largest, and 5 is the smallest
+    - has_direct_connections: "direct" "no"
+    - use_relative_sparsity: "sp" "no" representing whether having sparse connections or not
+    - is_fuzzy: "fuzzy" "no" 
+
+    
     """
     base_config =  {
         'number_runs': 10, 
