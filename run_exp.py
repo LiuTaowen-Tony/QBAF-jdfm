@@ -19,7 +19,7 @@ device = torch.device("cpu")
 
 def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
     """
-    Parse config for each dataset
+    Parse config for experiments
     dataset: name of dataset
     num_of_jas: number of joint attack and support
     which_size: which size of model to use
@@ -41,7 +41,6 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     - has_direct_connections: "direct" "no"
     - use_relative_sparsity: "sp" "no" representing whether having sparse connections or not
     - is_fuzzy: "fuzzy" "no" 
-
     
     """
     base_config =  {
@@ -134,7 +133,29 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     return base_config
 
 
-# parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity, is_fuzzy):
+
+# Parse config for experiments
+# dataset: name of dataset
+# num_of_jas: number of joint attack and support
+# which_size: which size of model to use
+# has_direct: whether to use direct attack and support
+# relative_sparsity: whether to use relative sparsity
+# is_fuzzy: whether to use fuzzy input transformation
+# return: config for the dataset
+
+# There are 3 steps in this function:
+# 1. set model size specific parameters
+# 2. set extension specific parameters
+# 3. set dataset specific parameters
+
+# options 
+
+# - dataset: "iris" "mushroom" "adult"
+# - joint_connection_number:  1 2
+# - size_of_QBAF: 1 2 3 4 5 where 1 is the largest, and 5 is the smallest
+# - has_direct_connections: "direct" "no"
+# - use_relative_sparsity: "sp" "no" representing whether having sparse connections or not
+# - is_fuzzy: "fuzzy" "no" 
 parameters = parse_config(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]),
              sys.argv[4] == 'direct', sys.argv[5] == 'sp',
              sys.argv[6] == 'fuzzy')

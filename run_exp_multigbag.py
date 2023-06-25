@@ -18,6 +18,26 @@ warnings.filterwarnings("ignore")
 device = torch.device("cpu")
 
 def parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
+    """
+    Parse config for each dataset
+
+    dataset: name of dataset
+    which_size: which size of model to use
+    relative_sparsity: whether to use relative sparsity
+    is_fuzzy: whether to use fuzzy input transformation
+
+    return: config for the dataset
+    
+    options 
+
+    - dataset: "iris" "mushroom" "adult"
+    - size_of_QBAF: 1 2 3 4 5 where 1 is the largest, and 5 is the smallest
+    - use_relative_sparsity: "sp" "no" representing whether having sparse connections or not
+    - is_fuzzy: "fuzzy" "no" 
+
+    """
+
+    
     base_config =  {
         'number_runs': 10, 
         'population_size': 20, 'number_generations': 10, 
@@ -86,7 +106,22 @@ def parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
     return base_config
 
 
-# parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
+# Parse config for each dataset
+
+# dataset: name of dataset
+# which_size: which size of model to use
+# relative_sparsity: whether to use relative sparsity
+# is_fuzzy: whether to use fuzzy input transformation
+
+# return: config for the dataset
+
+# options 
+
+# - dataset: "iris" "mushroom" "adult"
+# - size_of_QBAF: 1 2 3 4 5 where 1 is the largest, and 5 is the smallest
+# - use_relative_sparsity: "sp" "no" representing whether having sparse connections or not
+# - is_fuzzy: "fuzzy" "no"
+
 parameters = parse_config(sys.argv[1],  int(sys.argv[2]), sys.argv[3] == 'sp', sys.argv[4] == 'fuzzy')
 
 print("Running with parameters:" + str(parameters), flush=True)
