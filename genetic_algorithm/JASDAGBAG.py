@@ -99,6 +99,9 @@ class JASDAGBAG(SparseAlgo):
 
     @classmethod
     def random_connectivity_init(cls, params):
+        """
+        Initializes the JASDAGBAG with random connectivity. 
+        """
         jasgbag = JASGBAG.random_connectivity_init(params, no_softmax=True)
         skip_conn = connectivity_list_random(params['input_size'], params['output_size'], params['number_connections_skip'])
         

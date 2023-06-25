@@ -50,6 +50,9 @@ class MultiGBAG(SparseAlgo):
     
     @classmethod
     def random_connectivity_init(self, params):
+        """
+        Initializes the MULTIGBAG with random connectivity. 
+        """
         input_size = params["input_size"]
         hidden_size1 = params["hidden_size1"]
         hidden_size2 = params["hidden_size2"]

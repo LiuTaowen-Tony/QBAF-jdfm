@@ -58,6 +58,15 @@ options
 - use_relative_sparsity: "sp" "no" representing whether having sparse connections or not
 - is_fuzzy: "fuzzy" "no" 
 
+## model names
+
+JASGBAG : QBAF classifier with joint attack and support
+
+DAGBAG : QBAF classifier with direct attack and support
+
+JASDAGBAG : QBAF classifier with both direct attack and support and joint attack and support
+
+MULTIGBAG : QBAF classifier with 2 hidden layers
 
 <!-- ## code structure
 `run_exp.py` is the entrance of `fuzzy input`, `Joint attack and support`, and `direct attack and support`. This file parse the command line input  -->
