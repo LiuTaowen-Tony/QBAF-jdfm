@@ -22,9 +22,12 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
     Parse config for experiments
     dataset: name of dataset
     num_of_jas: number of joint attack and support
-    which_size: which size of model to use
     has_direct: whether to use direct attack and support
-    relative_sparsity: whether to use relative sparsity
+    which_size: which size of model to use, there are 5 configurations as listed
+        in the report
+    relative_sparsity: whether to use relative sparsity. When relative sparsity
+        is True, replace sparsity term use the relative sparsity term in fitness
+        function. Otherwise use the standard fitness function
     is_fuzzy: whether to use fuzzy input transformation
     return: config for the dataset
     
@@ -137,9 +140,12 @@ def parse_config(dataset, num_of_jas, which_size, has_direct, relative_sparsity,
 # Parse config for experiments
 # dataset: name of dataset
 # num_of_jas: number of joint attack and support
-# which_size: which size of model to use
 # has_direct: whether to use direct attack and support
-# relative_sparsity: whether to use relative sparsity
+# which_size: which size of model to use, there are 5 configurations as listed
+#     in the report
+# relative_sparsity: whether to use relative sparsity. When relative sparsity
+#     is True, replace sparsity term use the relative sparsity term in fitness
+#     function. Otherwise use the standard fitness function
 # is_fuzzy: whether to use fuzzy input transformation
 # return: config for the dataset
 

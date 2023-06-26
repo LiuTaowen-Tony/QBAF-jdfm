@@ -22,8 +22,11 @@ def parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
     Parse config for each dataset
 
     dataset: name of dataset
-    which_size: which size of model to use
-    relative_sparsity: whether to use relative sparsity
+    which_size: which size of model to use, there are 5 configurations as listed
+        in the report
+    relative_sparsity: whether to use relative sparsity. When relative sparsity
+        is True, replace sparsity term use the relative sparsity term in fitness
+        function. Otherwise use the standard fitness function
     is_fuzzy: whether to use fuzzy input transformation
 
     return: config for the dataset
@@ -110,7 +113,11 @@ def parse_config(dataset, which_size, relative_sparsity, is_fuzzy):
 
 # dataset: name of dataset
 # which_size: which size of model to use
-# relative_sparsity: whether to use relative sparsity
+# which_size: which size of model to use, there are 5 configurations as listed
+#     in the report
+# relative_sparsity: whether to use relative sparsity. When relative sparsity
+#     is True, replace sparsity term use the relative sparsity term in fitness
+#     function. Otherwise use the standard fitness function
 # is_fuzzy: whether to use fuzzy input transformation
 
 # return: config for the dataset
